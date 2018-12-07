@@ -8,19 +8,19 @@ $(function(){
 		var map;
 		var getFunctionPath;
 		var lastSliderNumber = 0;
-		var thisMapChart = this;
+		var thisMapChart = this; 
 		var countryLayer = [];
 		var data;
 		var smallestOoM;
 		var smallestNoZ; // smallest number of Zeros at the end
         
-
-
+		
+		
 		this.update = function(valCol) {
 			$("#mapLegendTitle").html(data.columnTitles[valCol]);
 			for (var i = 0; i < data.labels.length; i++) {
 				for (var key in countryLayer[i]._layers) {
-					countryLayer[i]._layers[key].feature.properties.value = data.values[valCol][i];
+					countryLayer[i]._layers[key].feature.properties.value = data.values[valCol][i]; 
 					countryLayer[i]._layers[key].setStyle({
 						fillColor: thisMapChart.getColor(data.values[valCol][i]),
 						weight: 1,
@@ -31,12 +31,12 @@ $(function(){
 					});
 					break;
 				}
-			}
+			}			
 		}
-
+		
 		/**
 		 * get the color for a specific value
-		 * @param {float} value
+		 * @param {float} value 
 		 * @return {hex} color
 		 */
 		this.getColor = function(value) {
@@ -45,16 +45,16 @@ $(function(){
 			}
 			for (var i = 0; i < data.colors.length; i++) {
 				if (data.colors[i].value == value) {
-					return data.colors[i].color;
+					return data.colors[i].color;	
 				}
 			}
 		}
-
+		
 		/**
-		 * get number of range for this value
+		 * get number of range for this value 
 		 * @param {float} data value
 		 * @return {int} range_id
-		 */
+		 */ 
 		this.range_id = function(val) {
 			var id = 0;
 
@@ -64,12 +64,12 @@ $(function(){
 			}
 			return id;
 		}
-
+		
 		this.Map = function(inputData,options,path){
-			data = inputData;
+			data = inputData;	
 			getFunctionPath = (typeof path === "undefined") ? "" : path;
-
-
+		
+			
 			// defaults:
             if (data.colors) {
                 options.range_amount = data.colors.length;
@@ -81,15 +81,15 @@ $(function(){
             
 			options.width = $("#"+map_id).width();
 			options.height = $("#"+map_id).height();
-
+			
 			if (!options.color_from) { options.color_from = '#ffff00'; }
 			if (!options.color_to) { options.color_to = '#ff0000'; }
-
-
+			
+			
 			var midpoint = get_midpoints(data.labels,options);
 			
-
-
+	
+			
 			// get variables like maximum and minimum and step value
             // if colors is not defined
             if (!data.colors) {
@@ -97,20 +97,20 @@ $(function(){
 			    data_vars = get_data_vars(minmax,options.range_amount);
             } else {dataColors = true; }
 			
-
+			
 			// create a map in the "map" div, set the view to a given place and zoom
 			map = L.map(map_id).setView([midpoint.lat, midpoint.lon], zoom);
 
 			// add an OpenStreetMap tile layer
-			L.tileLayer('http://openmapsurfer.uni-hd.de/tiles/roadsg/x={x}&y={y}&z={z}', {
+			L.tileLayer('http://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png', {
 				minZoom: 0,
 				maxZoom: 19,
-				attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+				attribution: '&copy; <a href="http://www.opencyclemap.org">OpenCycleMap</a>, &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
 			}).addTo(map);
 			
-
+			
 			if (dataColors) {
-				colors = data.colors;
+				colors = data.colors;	
 			} else {
 				colors = Gradient.get(options.color_from, options.color_to, options.range_amount);
 			}
@@ -118,13 +118,13 @@ $(function(){
 			
 			nextCountry(0);
 			
-
-
-
-
+			
+				
+			
+			
 			/**
 			 * information window
-			 */
+			 */ 
 				var info = L.control();
 
 				info.onAdd = function (map) {
@@ -142,9 +142,9 @@ $(function(){
 
 				info.addTo(map);
 
-
+			
 			/**
-			 * Legend
+			 * Legend 
 			 */
 				var legend = L.control({position: 'bottomright'});
 
@@ -179,7 +179,7 @@ $(function(){
 							var toLegend = thousand_separator(grades[i+1],true);
 							div.innerHTML +=
 								'<i style="background:' + thisMapChart.getColor(grades[i]) + '"></i> ' +
-								fromLegend.value +
+								fromLegend.value + 
 								(grades[i + 1] ? '&ndash;' + toLegend.value + '<br>' : '+');
 						}
 					}
@@ -188,10 +188,10 @@ $(function(){
 				};
 
 				legend.addTo(map);
-
-
-
-
+			
+			
+			
+			
 			function onEachFeature(feature, layer) {
 				layer.on({
 					mouseover: highlightFeature,
@@ -202,40 +202,42 @@ $(function(){
 			
 			/**
 			 * Draw the next countries (recursive)
-			 * @param c number of next country
+			 * @param c number of next country 
 			 */
 			function nextCountry(c) {
 				var label = data.labels[c];
 				var value = data.values[0][c];
-				$.getJSON(getFunctionPath+"getFunctions/layer.php", {country : label}, function(geoJSONData){
+				$.getJSON(getFunctionPath+"getFunctions/layer.php", {country : label}, function(geoJSONData){	
 					var geoJSONcoor = '{"'+geoJSONData.coor;
 					var countryData =  {
 						type: "Feature",
 						properties: {
 							"name": label,
 							"value": value
-						}
+						} 
 					};
 					countryData.geometry = JSON && JSON.parse(geoJSONcoor) || $.parseJSON(geoJSONcoor);
 					countryLayer[c] = L.geoJson(countryData, {style: style, onEachFeature: onEachFeature}).addTo(map);
 				}).success(function() {
-					if (c < data.labels.length-1) nextCountry(c+1)
+					if (c < data.labels.length-1) nextCountry(c+1) 
 					else {
 						if (data.values.length > 1) {
+							$("#rangeSliderDiv").css("display","block");
 							$("#rangeSlider").css("display","block");
 							$("#rangeSlider").ionRangeSlider({values:data.columnTitles,type:'single',onChange: function(obj) {
 									if (obj.fromNumber !== lastSliderNumber) {
 										thisMapChart.update(obj.fromNumber);
 										lastSliderNumber = obj.fromNumber;
 									}
-							}});
+							}
+							});	
 						}
 					}
 				});
-
+				
 			}
 
-
+			
 
 			/**
 			 * Get the style of country
@@ -271,7 +273,7 @@ $(function(){
 				}
 				info.update(layer.feature.properties);
 			}
-
+			
 			/**
 			 * Reset the highlight
 			 */
@@ -290,20 +292,20 @@ $(function(){
 				}
 				info.update();
 			}
-
-
+			
+			
 			/**
 			 * Zoom to a Country
 			 */
 			function zoomToFeature(e) {
 				map.fitBounds(e.target.getBounds());
 			}
-
+			
 		/**
 		 * get minimum and maximum
 		 * @param {array} values
 		 * @return {object} min and max
-		 */
+		 */ 
 		function min_max(data) {
 			var upperValue = data[0][0];
 			var lowerValue = data[0][0];
@@ -313,12 +315,12 @@ $(function(){
 					if (data[d][i] < lowerValue) { lowerValue = data[d][i]; }
 				}
 			}
-
+			
 			return {min: lowerValue, max: upperValue};
 		}
 		
 		/**
-		 * Get the midpoint and the zoom factor (global variable)
+		 * Get the midpoint and the zoom factor (global variable)	
 		 * @param {array} labels
 		 * @param {options} options (needs width and height)
 		 * @return {object} lat, lon
@@ -373,11 +375,11 @@ $(function(){
 			   }	 
 			});
 		}
-
+		
 		function get_range_amount(data) {
 			var amounts = [];
 			// get min and max
-			var minmax = min_max(data.values);
+			var minmax = min_max(data.values);	
 			for (var i = 3; i <= 10; i++) {
 				var data_vars = get_data_vars(minmax,i);
 				var amount = [];
@@ -403,16 +405,16 @@ $(function(){
 		function get_data_vars(range,range_amount) {
 			var step = Math.ceil((range.max-range.min)/range_amount).toPrecision(2);
 			var OoM = OrderOfMagnitude(step);
-
+			
 			range.min = Math.floor(range.min/Math.pow(10,OoM))*Math.pow(10,OoM);
-
+			
 			var i = 0;
 			while ((range.min + range_amount*step) < range.max) {
 				step = Math.ceil((range.max-range.min)/(range_amount-i)).toPrecision(2);
 				i++;
 			}
-
-
+			
+			
 			smallestOoM = OrderOfMagnitude(range.min+step);
 			for(var i=1; i < smallestOoM; i++) {
 				if ((range.min+step)%(10*i) !== 0) {
@@ -420,19 +422,19 @@ $(function(){
 					break;
 				}
 			}
-
-
-
+			
+			
+			
 			return {step: step, min: range.min, max: range.max};
 		}
 		
-
-
-
+		
+	
+			
 		/**
 		 * Get the best nr of colors
 		 * @param {array} distributions
-		 */
+		 */	
 		function get_best_distribution(distributions) {
 			var best = 0,
 				best_nr;
@@ -451,7 +453,7 @@ $(function(){
 			}
 			return best_nr;
 		}
-
+		  
 		function OrderOfMagnitude(val) {
 			var OoM = Math.floor(Math.log(val) / Math.LN10);
 			return OoM;
@@ -462,22 +464,22 @@ $(function(){
 			legend = (typeof legend === "undefined") ? false : legend;
 			var postfix ='';
 			switch(smallestNoZ) {
-				case 3:	case 4:	case 5:
+				case 3:	case 4:	case 5:	
 					smallestNoZ = 3;
 					postfix = "thousand";
 					break;
-				case 6:	case 7:	case 8:
+				case 6:	case 7:	case 8:	
 					smallestNoZ = 6;
 					postfix = "million";
-					break;
-				case 9:	case 10:	case 11:
+					break;	
+				case 9:	case 10:	case 11:	
 					smallestNoZ = 9;
 					postfix = "billion";
-					break;
-				case 12:	case 13:	case 14:
+					break;	
+				case 12:	case 13:	case 14:	
 					smallestNoZ = 12;
 					postfix = "trillion";
-					break;
+					break;	
 			}
 			if (postfix != '') {
 				if (legend) {
@@ -492,5 +494,5 @@ $(function(){
 		}
 		}
 	}
-
+	
 });

@@ -55,16 +55,19 @@
 		public $countries;
 		
 		//constants for value_types
-		const TYPE_STRING = 	0;
-		const TYPE_NUMBER = 	1;
-		const TYPE_PERCENTAGE = 2;
-		const TYPE_SUM_ALL = 	3;
-		const TYPE_YEAR = 		4;
-		const TYPE_DATE = 		5;
-		const TYPE_CHANGE = 	6;
-		const TYPE_RANK = 		7;
-		const TYPE_MONTH = 		8;
-		const TYPE_COUNTRY =	9;
+		const TYPE_STRING 		= 0;
+		const TYPE_NUMBER 		= 1;
+		const TYPE_PERCENTAGE 	= 2;
+		const TYPE_SUM_ALL 		= 3;
+		const TYPE_YEAR 		= 4;
+		const TYPE_DATE 		= 5;
+		const TYPE_CHANGE 		= 6;
+		const TYPE_RANK 		= 7;
+		const TYPE_MONTH 		= 8;
+		const TYPE_COUNTRY 		= 9;
+		const TYPE_EMPTY 		= 10;
+		const DATE_RX_DE 		= '#^\d{1,2}\.[ ]?(Jan(?:uar)?|Feb(?:ruar)?|März?|Apr(?:il)?|Mai|Juni?|Juli?|Aug(?:ust)?|Sep(?:tember)?|Okt(?:ober)?|Nov(?:ember)?|Dez(?:ember)?|((0?[1-9])|10|11|12))( ?\.[1-2]\d{3})?$#';
+		const DATE_RX_EN		= '#^\d{1,2}( Jan(?:uary)?| Feb(?:ruary)?| Mar(?:ch)?| Apr(?:il)?| May| June?| July?| Aug(?:ust)?| Sep(?:tember)?| Oct(?:ober)?| Nov(?:ember)?| Dec(?:ember)?|\.((0?[1-9])|10|11|12))( ?\.[1-2]\d{3})?$#';
 
 		
 		function __construct() {
@@ -98,8 +101,7 @@
 			// Get months
 			switch($lang) {
 				case "en": 
-					$this->month = array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
-										 "January","February","March","April","May","June","July","August","September","October","November","December");
+					$this->month = array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",											 							"January","February","March","April","May","June","July","August","September","October","November","December");
 					break;
 				case "de": 
 					$this->month = array("Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez",
@@ -112,7 +114,7 @@
 			$this->lang = $lang;
 			
 			$this->table_title = $this->getTableTitle();
-
+			
 			// Remove all html comments
 			$this->removeComments();
 			
@@ -122,21 +124,17 @@
 			$this->get_structured_array();
 			
 			
-			// reject empty labels
-			$new_row_array = $this->row_array;
+			// add empty labels
 			$loop_var = $this->row_count;
-			for ($r = 0; $r < $loop_var; $r++) {		
+			for ($r = 0; $r < $loop_var-1; $r++) {		
 				for ($c = 0; $c < $this->col_count; $c++) {
-					if (strpos($this->row_array[$r][$this->column_titles[$c]],"empty") === 0) { // empty label
-						array_splice($new_row_array,$r,1); 	// delete row from array
-						$this->row_count--;
-					} 
+					$colTitle = $this->column_titles[$c];
+					if (!array_key_exists($colTitle,$this->row_array[$r])) {
+						$this->row_array[$r][$colTitle] = "";
+					}
 				}
 			}
-			
-			$this->row_array = $new_row_array;
-		
-		
+					
 			$this->array_structure = $this->get_structure();
 			
 			
@@ -153,7 +151,7 @@
 		 * Remove all comments
 		 */
 		function removeComments() {
-			$this->table = preg_replace('/<!--(.*?)-->/s','',$this->table);
+			$this->table = preg_replace('/<!--(.*?)-->/s','',$this->table);	
 		}
 		
 		/**
@@ -245,8 +243,8 @@
 						// check if this $col is in the current "single table"
 						for ($c = $col_min; $c < $col_max; $c++) {
 							$col = $cols[$c];
-
-
+							
+							
 							// some columns have a colspan so the entries have to be colspan times in the array
 							$colspan = 1;
 							preg_match('#colspan="(.*)"#',substr($col,0,strpos($col,">")),$match_colspan);
@@ -259,37 +257,38 @@
 
 							$col = $this->readable_html($col);
 
-
+							
 							// in some entries there is sth. like '< 0.1' so a number 
 							$col = str_replace('&lt;','<',$col);
 
 							$bool_date = false;
-							if (($this->lang == "de") and (preg_match('#^\d{1,2}\.[ ]?(Januar |Februar |März |April |Mai |Juni |Juli |August |September |Oktober |November |Dezember |((0?[1-9])|10|11|12))(\.[1-2]\d{3})?$#',$col))) {
+							if (($this->lang == "de") and (preg_match(self::DATE_RX_DE,$col))) {
 								$bool_date = true;
 							}
-							if (($this->lang == "en") and (preg_match('#^\d{1,2}( January | February | March | April | May | June | July | August | September | October | November | December |\.((0?[1-9])|10|11|12))(\.[1-2]\d{3})?$#',$col))) {
+							if (($this->lang == "en") and (preg_match(self::DATE_RX_EN,$col))) {
 								$bool_date = true;
 							}
-
+							
 							$col = trim($col);
-
+							
 							// no date
-							if ($bool_date === false) {
+							if ($bool_date === false) { 
+								$colNumber = false;
 								// remove the thousand separators
 								if ($this->lang == "de") {
-									$colNumber = str_replace('.','',$col);
-									$colNumber = str_replace(',','.',$colNumber);
+									$colNumber = str_replace('.','',$col); 
+									$colNumber = str_replace(',','.',$colNumber); 
 								}
 								if ($this->lang == "en") {
-									$colNumber = str_replace(',','',$col);
-								}
-
-								if (is_numeric($colNumber)) {
-									$col = $colNumber;
+									$colNumber = str_replace(',','',$col); 
+								}	
+								
+								if ($colNumber and is_numeric($colNumber)) {
+									$col = $colNumber;	
 								}
 							}
-
-
+							
+								
 							// delete "<" number (example: < 0.1 => 0.1 !important for the correct column_structure) 
 							$smaller = trim(preg_replace('/</','',$col,1)); // replace only once
 
@@ -316,9 +315,9 @@
 				$this->row_array = $row_array;
 				
 				// more columns than rows => transpose table
-				if ($this->col_count_unique > $this->row_count+1) {
+				/*if ($this->col_count_unique > $this->row_count+1) {
 					$this->transpose_table();
-				}
+				}*/
 		}
 		
 		/**
@@ -351,24 +350,22 @@
 			4: year
 			5: date
 			6: change value (+|-)
-			7: rank 
+			7: rank
+			8: month
+			9: country
+			10: empty (can be string or number (0) or percentage (0))
 			@param integer $rowNr row number
 			@param integer $colNr column number
 			@param string $col column title
 			@return type
 		*/
-		function get_type($rowNr,$colNr,$col) { 
-			
-			// Date format (de: 12.07.1932,12.7.1932,12. Juli 1932 or 12. Juli) || (en: 12.07.1932,12.7.1932,12 July 1932 or 12 July)
-			if ((($this->lang == "de") and (preg_match('#^\d{1,2}\.[ ]?(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|((0?[1-9])|10|11|12)\.)( ?[1-2]\d{3})?$#',$this->row_array[$rowNr][$col]))) or
-				(($this->lang == "en") and (preg_match('#^\d{1,2}( January| February| March| April| May| June| July| August| September| October| November| December|\.((0?[1-9])|10|11|12)\.)( ?[1-2]\d{3})?$#',$this->row_array[$rowNr][$col])))) {
-				return self::TYPE_DATE;
-			}
-			
+		function get_type($rowNr,$colNr,$col) { 		
+			if (mb_strlen(trim($this->row_array[$rowNr][$col])) == 0) {
+				return self::TYPE_EMPTY;	
+			}			
 			if (strpos($this->row_array[$rowNr][$col],"%") !== false) {
 				$percent = trim(str_replace("%","",$this->row_array[$rowNr][$col]));
-				if (is_numeric($percent))
-				{
+				if (is_numeric($percent)) {
 					$this->row_array[$rowNr][$col] = $percent;
 					// Check if the last entry in a percentage column is 100 (sum of all)
 					if ((round($percent,2) - round(100,2)) == 0) {
@@ -381,23 +378,18 @@
 			}
 				
 				
-
 			if (is_numeric($this->row_array[$rowNr][$col])) {
-				if ($this->entryInStr(strtolower($this->column_titles[$colNr]),array("rank","rang","nr.","no.")) == true)
-				{
+				if ($this->entryInStr(strtolower($this->column_titles[$colNr]),array("rank","rang","nr.","no.")) == true) {
 					return self::TYPE_RANK; 
 				}
-				else 
-				{
+				else {
 					// a year can be between 1000 and 2114 (current year + 100)
 					if (($this->row_array[$rowNr][$col] >= 1000)
 						and ($this->row_array[$rowNr][$col] <= date("Y")+100)
-						and (strlen($this->row_array[$rowNr][$col]) == 4)) 
-					{
+						and (strlen($this->row_array[$rowNr][$col]) == 4))	{
 						return self::TYPE_YEAR; 
 					}
-					else
-					{
+					else {
 					// last row
 					if ($rowNr == $this->row_count-2) {
 						// Compute the sum of all entries to the last in a column
@@ -450,6 +442,12 @@
 			 }
 			}
 			else { // not numeric
+				// Date format (de: 12.07.1932,12.7.1932,12. Juli 1932 or 12. Juli) || (en: 12.07.1932,12.7.1932,12 July 1932 or 12 July)
+				if ((($this->lang == "de") and (preg_match(self::DATE_RX_DE,$this->row_array[$rowNr][$col]))) or
+					(($this->lang == "en") and (preg_match(self::DATE_RX_EN,$this->row_array[$rowNr][$col])))) {
+					return self::TYPE_DATE;
+				}
+				
 				// is month
 				if (in_array($this->row_array[$rowNr][$col],$this->month)) { 
 					return self::TYPE_MONTH;
@@ -478,36 +476,63 @@
 				$column_structure = $this->array_structure[$this->column_titles[$i]][0];
 				$value[0] = $this->row_array[0][$this->column_titles[$i]];
 				for ($j = 1; $j < $this->row_count-1; $j++) {
+					// current cell type
+					$cCellType = $this->array_structure[$this->column_titles[$i]][$j];
+					
 					// if (last entry and not sum of all) or not last entry
 					if ((($j == $this->row_count-2) and 
-						 ($this->array_structure[$this->column_titles[$i]][$j] != table2array::TYPE_SUM_ALL))
+						 ($cCellType != self::TYPE_SUM_ALL))
 						or ($j != $this->row_count-2)) { 
 						// if type of entry != type of column
-						if ($this->array_structure[$this->column_titles[$i]][$j] != $column_structure) {
+						if ($cCellType != $column_structure) {
+							$isPossible = false;
+							
+							// empty type can be interpreted as number or string or percentage
+							$maybeEmptyTypes = array(self::TYPE_NUMBER,self::TYPE_STRING,self::TYPE_PERCENTAGE);
+							if ((array_search($column_structure,$maybeEmptyTypes) !== false)
+								 and  ($cCellType == self::TYPE_EMPTY)) {
+								continue;
+							} else if (($column_structure == self::TYPE_EMPTY) and 
+								(($typeIndex = array_search($cCellType,$maybeEmptyTypes)) !== false)) {
+								$column_structure = $maybeEmptyTypes[$typeIndex];
+								switch ($typeIndex) {
+									case self::TYPE_NUMBER: 
+										$this->row_array[$j][$i] = 0;
+										break;
+									case self::TYPE_PERCENTAGE: 
+										$this->row_array[$j][$i] = 0;
+										break;
+									case self::TYPE_STRING: 
+										$this->row_array[$j][$i] = "";
+										break;
+								}
+								continue;
+							}
+							
+							
 							// year can be interpreted as a normal number
 							if ((($column_structure == self::TYPE_YEAR) and 
-								 ($this->array_structure[$this->column_titles[$i]][$j] == self::TYPE_NUMBER))
+								 ($cCellType == self::TYPE_NUMBER))
 							 or (($column_structure == self::TYPE_NUMBER) and 
-								 ($this->array_structure[$this->column_titles[$i]][$j] == self::TYPE_YEAR))) {
-								$column_structure = table2array::TYPE_NUMBER;	
+								 ($cCellType == self::TYPE_YEAR))) {
+								$column_structure = self::TYPE_NUMBER;	
+								continue;
 							}
-							else {
-								// month and country can be interpreted as a normal string
-								if (in_array($colum_structure,array(self::TYPE_MONTH,self::TYPE_STRING,self::TYPE_COUNTRY)) and
-									in_array($this->array_structure[$this->column_titles[$i]][$j],
-											 array(self::TYPE_MONTH,self::TYPE_STRING,self::TYPE_COUNTRY))) {
-									$column_structure = table2array::TYPE_STRING;	
-								} else {
-									$column_structure = "undefined";
-									break;
-								}
-							}
+							
+							// month and country can be interpreted as a normal string
+							if (in_array($column_structure,array(self::TYPE_MONTH,self::TYPE_STRING,self::TYPE_COUNTRY)) and
+								in_array($cCellType,
+										 array(self::TYPE_MONTH,self::TYPE_STRING,self::TYPE_COUNTRY))) {
+								$column_structure = self::TYPE_STRING;	
+								continue;
+							} 
+							$column_structure = "undefined";
 						}
 					}
 					
 
 					
-					if ($column_structure == table2array::TYPE_STRING) { 
+					if ($column_structure == self::TYPE_STRING) { 
 						// Check if there are two entries with same data
 						if (!in_array($this->row_array[$j][$this->column_titles[$i]],$value)) {
 							$value[$j] = $this->row_array[$j][$this->column_titles[$i]];
@@ -633,7 +658,7 @@
 							$this->array_structure[$col][$key_cell] = self::TYPE_NUMBER;
 						}
 						// => new cell value (without unit) 
-						for($cn = 0; $cn < $this->row_count; $cn++) {
+						for($cn = 0; $cn < $this->row_count-1; $cn++) {
 							$this->row_array[$cn][$col] = $numeric_parts[$cn];
 						}
 						// => new column title 
@@ -641,7 +666,7 @@
 						$key = array_search($col,$this->column_titles);
 						$this->column_titles[$key] = $this->column_titles[$key].' ('.$unit.')';
 						// in $this->row_array
-						for($cn = 0; $cn < $this->row_count; $cn++) {
+						for($cn = 0; $cn < $this->row_count-1; $cn++) {
 							$this->row_array[$cn][$col.' ('.$unit.')'] = $this->row_array[$cn][$col];
 							unset($this->row_array[$cn][$col]);
 						}
@@ -674,7 +699,7 @@
 			return false;
 		}
 		
-
+		
 		/**
 		 * Get title of the table
 		 * <h..></h1>|<b> before the table starts
@@ -687,6 +712,6 @@
 			$posHeader = strrpos($tableHeader,"<h>");
 			$posEndHeader = strpos($tableHeader,"</h>",$posHeader);
 			return substr($tableHeader,$posHeader+3,$posEndHeader-$posHeader-3);
-
+			
 		}
 	}
